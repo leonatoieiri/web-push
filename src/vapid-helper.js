@@ -20,21 +20,29 @@ const ECPrivateKeyASN = asn1.define('ECPrivateKey', function() {
   this.seq().obj(
     this.key('version').int(),
     this.key('privateKey').octstr(),
-    this.key('parameters').explicit(0).objid()
+    this.key('parameters')
+      .explicit(0)
+      .objid()
       .optional(),
-    this.key('publicKey').explicit(1).bitstr()
+    this.key('publicKey')
+      .explicit(1)
+      .bitstr()
       .optional()
   );
 });
 
 function toPEM(key) {
-  return ECPrivateKeyASN.encode({
-    version: 1,
-    privateKey: key,
-    parameters: [1, 2, 840, 10045, 3, 1, 7] // prime256v1
-  }, 'pem', {
-    label: 'EC PRIVATE KEY'
-  });
+  return ECPrivateKeyASN.encode(
+    {
+      version: 1,
+      privateKey: key,
+      parameters: [1, 2, 840, 10045, 3, 1, 7] // prime256v1
+    },
+    'pem',
+    {
+      label: 'EC PRIVATE KEY'
+    }
+  );
 }
 
 function generateVAPIDKeys() {
@@ -71,8 +79,11 @@ function validateSubject(subject) {
   }
 
   if (typeof subject !== 'string' || subject.length === 0) {
-    throw new Error('The subject value must be a string containing a URL or '
-    + 'mailto: address. ' + subject);
+    throw new Error(
+      'The subject value must be a string containing a URL or ' +
+        'mailto: address. ' +
+        subject
+    );
   }
 
   if (subject.indexOf('mailto:') !== 0) {
@@ -89,8 +100,9 @@ function validatePublicKey(publicKey) {
   }
 
   if (typeof publicKey !== 'string') {
-    throw new Error('Vapid public key is must be a URL safe Base 64 '
-    + 'encoded string.');
+    throw new Error(
+      'Vapid public key is must be a URL safe Base 64 ' + 'encoded string.'
+    );
   }
 
   publicKey = urlBase64.decode(publicKey);
@@ -106,15 +118,16 @@ function validatePrivateKey(privateKey) {
   }
 
   if (typeof privateKey !== 'string') {
-    throw new Error('Vapid private key must be a URL safe Base 64 '
-    + 'encoded string.');
+    throw new Error(
+      'Vapid private key must be a URL safe Base 64 ' + 'encoded string.'
+    );
   }
 
   privateKey = urlBase64.decode(privateKey);
 
-  if (privateKey.length !== 32) {
-    throw new Error('Vapid private key should be 32 bytes long when decoded.');
-  }
+  // if (privateKey.length !== 32) {
+  //   throw new Error('Vapid private key should be 32 bytes long when decoded.');
+  // }
 }
 
 /**
@@ -148,7 +161,9 @@ function validateExpiration(expiration) {
 
   // Roughly checks the time of expiration, since the max expiration can be ahead
   // of the time than at the moment the expiration was generated
-  const maxExpirationTimestamp = getFutureExpirationTimestamp(MAX_EXPIRATION_SECONDS);
+  const maxExpirationTimestamp = getFutureExpirationTimestamp(
+    MAX_EXPIRATION_SECONDS
+  );
 
   if (expiration >= maxExpirationTimestamp) {
     throw new Error('`expiration` value is greater than maximum of 24 hours');
@@ -168,14 +183,24 @@ function validateExpiration(expiration) {
  * @return {Object}                 Returns an Object with the Authorization and
  * 'Crypto-Key' values to be used as headers.
  */
-function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncoding, expiration) {
+function getVapidHeaders(
+  audience,
+  subject,
+  publicKey,
+  privateKey,
+  contentEncoding,
+  expiration
+) {
   if (!audience) {
     throw new Error('No audience could be generated for VAPID.');
   }
 
   if (typeof audience !== 'string' || audience.length === 0) {
-    throw new Error('The audience value must be a string containing the '
-    + 'origin of a push service. ' + audience);
+    throw new Error(
+      'The audience value must be a string containing the ' +
+        'origin of a push service. ' +
+        audience
+    );
   }
 
   const audienceParseResult = url.parse(audience);
@@ -213,7 +238,9 @@ function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncodi
     privateKey: toPEM(privateKey)
   });
 
-  if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_128_GCM) {
+  if (
+    contentEncoding === WebPushConstants.supportedContentEncodings.AES_128_GCM
+  ) {
     return {
       Authorization: 'vapid t=' + jwt + ', k=' + urlBase64.encode(publicKey)
     };
